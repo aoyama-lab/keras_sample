@@ -1,45 +1,41 @@
 import pyaudio
-import wave
+import time
 
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 44100
-CHUNK = 512
-RECORD_SECONDS = 5
-WAVE_OUTPUT_FILENAME = "recordedFile.wav"
-device_index = int(0)
-audio = pyaudio.PyAudio()
+class AudioFilter():
+    def __init__(self):
+        # オーディオに関する設定
+        self.p = pyaudio.PyAudio()
+        self.channels = 1 # マイクがモノラルの場合は1にしないといけない
+        self.rate = 48000 # DVDレベルなので重かったら16000にする
+        self.format = pyaudio.paInt16
+        self.stream = self.p.open(
+                        format=self.format,
+                        channels=self.channels,
+                        rate=self.rate,
+                        output=True,
+                        input=True,
+                        stream_callback=self.callback)
 
-print("----------------------record device list---------------------")
-info = audio.get_host_api_info_by_index(0)
-numdevices = info.get('deviceCount')
-for i in range(0, numdevices):
-        if (audio.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
-            print("Input Device id ", i, " - ", audio.get_device_info_by_host_api_device_index(0, i).get('name'))
+    # コールバック関数（再生が必要なときに呼び出される）
+    def callback(self, in_data, frame_count, time_info, status):
+        out_data = in_data
+        return (out_data, pyaudio.paContinue)
 
-print("-------------------------------------------------------------")
+    def close(self):
+        self.p.terminate()
 
-index = (input())
-print("recording via index "+str(index))
+if __name__ == "__main__":
+    # AudioFilterのインスタンスを作る場所
+    af = AudioFilter()
 
-stream = audio.open(format=FORMAT, channels=CHANNELS,
-                rate=RATE, input=True,input_device_index = index,
-                frames_per_buffer=CHUNK)
-print ("recording started")
-Recordframes = []
+    # ストリーミングを始める場所
+    af.stream.start_stream()
 
-for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-    data = stream.read(CHUNK)
-    Recordframes.append(data)
-print ("recording stopped")
+    # ノンブロッキングなので好きなことをしていていい場所
+    while af.stream.is_active():
+        time.sleep(0.1)
 
-stream.stop_stream()
-stream.close()
-audio.terminate()
-
-waveFile = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-waveFile.setnchannels(CHANNELS)
-waveFile.setsampwidth(audio.get_sample_size(FORMAT))
-waveFile.setframerate(RATE)
-waveFile.writeframes(b''.join(Recordframes))
-waveFile.close()
+    # ストリーミングを止める場所
+    af.stream.stop_stream()
+    af.stream.close()
+    af.close()
