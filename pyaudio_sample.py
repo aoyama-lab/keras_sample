@@ -1,5 +1,8 @@
 import pyaudio
 import time
+'''
+コード内でマイクとスピーカ指定しないとハウリング起こしてクッソ耳が痛くなるので注意!
+'''
 
 class AudioFilter():
     def __init__(self):
