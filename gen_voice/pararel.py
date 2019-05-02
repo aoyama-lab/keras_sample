@@ -17,6 +17,10 @@ from dtw import dtw
 def draw_mcep(mcep_file1, mcep_file2):
     pass
 
+
+
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print("usage: python align_mcep.py <mcep_dir1> <mcep_dir2> <aligned_mcep_dir1> <aligned_mcep_dir2>")
@@ -41,16 +45,20 @@ if __name__ == "__main__":
 
     #print (mcep_file)
     # オリジナルのmcepを読み込み
-    mcep_file="mcep_my/voice.mcep"
+    mcep_file="voice.mcep"
     mcep1 = np.loadtxt("mcep_my/myvoice.mcep")
     mcep2 = np.loadtxt("mcep_miku/miku1.mcep")
     
     # DTWで同期を取る
-    #dtw(系列1 系列2 )
-    euclidean_norm = lambda mcep1, mcep2: np.abs(mcep1 - mcep2)
-    dist, cost, path = dtw(mcep1, mcep2,dist=euclidean_norm)
-    aligned_mcep1 = mcep1[path[0]]
-    aligned_mcep2 = mcep2[path[1]]
+    #返り値４つ=dtw(系列1 系列2 ,距離算出)
+    euclidean_norm = lambda x, y: np.abs(x - y)
+    for order in range(26):
+        print("now caluckating order "+str(order))
+        d, cost_matrix, acc_cost_matrix, path = dtw(mcep1[:,order], mcep2[:,order], dist=euclidean_norm)
+        #dist, cost, path = dtw((mcep1[:,0]), (mcep2[:,0]),dist=euclidean_norm)
+
+        aligned_mcep1 = mcep1[path[0]][order]
+        aligned_mcep2 = mcep2[path[1]][order]
     # 同期を取ったmcepをテキスト形式で書き込み
     np.savetxt(os.path.join(aligned_mcep_dir1, mcep_file), aligned_mcep1, fmt="%0.6f")
     np.savetxt(os.path.join(aligned_mcep_dir2, mcep_file), aligned_mcep2, fmt="%0.6f")
